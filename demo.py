@@ -6,6 +6,7 @@ import cv2
 
 from decoder import process_decoder
 from utils import set_logging
+from teacher_tracker import TeacherTracker
 
 
 def parse_args():
@@ -17,6 +18,7 @@ def parse_args():
 
 
 def run(args):
+    ttracker = TeacherTracker()
     q_decoder = Queue()
     p_decoder = Process(target=process_decoder, args=(args.path_video_in, q_decoder), daemon=True)
     p_decoder.start()
@@ -24,9 +26,10 @@ def run(args):
     while True:
         idx_frame, frame, fc, fps, h, w = q_decoder.get()
 
+        frame = ttracker.infer(frame)
         cv2.putText(frame, f'{idx_frame} / {fc}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
         cv2.imshow(args.window_name, frame)
-        if cv2.waitKey(1) & 0xFF == ord('q') or (idx_frame > fc - 10 and fc > 0):
+        if cv2.waitKey(1) & 0xFF == ord('q') or (idx_frame > fc - 5 and fc > 0):
             break
     cv2.destroyAllWindows()
 
